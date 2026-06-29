@@ -1,0 +1,68 @@
+name: release-krylovkitc-oblix-cpu
+command: |
+  bash -lc 'set -euo pipefail
+  RUN_DIR="$PWD"
+  repo="{repo}"
+  julia="{julia}"
+  cd "$repo"
+  mkdir -p "$RUN_DIR/results"
+  export JULIA_NUM_THREADS="{julia_threads}"
+  export OPENBLAS_NUM_THREADS="{blas_threads}"
+  export OMP_NUM_THREADS="{omp_threads}"
+  export MKL_NUM_THREADS="{mkl_threads}"
+  if [ -n "{julia_depot}" ]; then
+    export JULIA_DEPOT_PATH="{julia_depot}"
+  fi
+  export KRYLOVKITC_OUTDIR="$RUN_DIR/results"
+  export KRYLOVKITC_CHIS="{chis}"
+  export KRYLOVKITC_WARMUP="{warmup}"
+  export KRYLOVKITC_REPEATS="{repeats}"
+  export KRYLOVKITC_TOL="{tol}"
+  export KRYLOVKITC_KRYLOVDIM="{krylovdim}"
+  export KRYLOVKITC_MAXITER="{maxiter}"
+  export KRYLOVKITC_MAX_RATIO="{max_ratio}"
+  export KRYLOVKITC_MAX_LAMBDA_ABS_DIFF="{max_lambda_abs_diff}"
+  export KRYLOVKITC_MAX_NATIVE_RELRES="{max_native_relres}"
+  export KRYLOVKITC_MAX_KRYLOV_RELRES="{max_krylov_relres}"
+  (
+    echo "name=release-krylovkitc-oblix-cpu"
+    echo "repo=$repo"
+    echo "date_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+    echo "chis=$KRYLOVKITC_CHIS"
+    "$julia" --version
+    git -C "$repo" rev-parse HEAD 2>/dev/null || true
+    git -C "$repo" status --short 2>/dev/null || true
+  ) > "$RUN_DIR/host_env.txt" 2>&1
+  "$julia" --project="$repo/TenetNative" -e "using Pkg; Pkg.instantiate(; update_registry=false)"
+  "$julia" --project="$repo/TenetNative" --startup-file=no \
+    "$repo/benchmarks/krylovkit/run_cpu.jl" 2>&1 | tee "$RUN_DIR/benchmark.log"
+  find "$RUN_DIR/results" -type f -print | sort > "$RUN_DIR/artifact_files.txt"'
+
+params:
+  repo: { type: str, default: "/home/qyang1/projects/LRIsing_oblix_campaign_20260625" }
+  julia: { type: str, default: "/home/qyang1/.juliaup/bin/julia" }
+  chis: { type: str, default: "32,64,128" }
+  warmup: { type: int, default: 2 }
+  repeats: { type: int, default: 7 }
+  tol: { type: str, default: "1e-12" }
+  krylovdim: { type: int, default: 30 }
+  maxiter: { type: int, default: 100 }
+  max_ratio: { type: str, default: "1.10" }
+  max_lambda_abs_diff: { type: str, default: "1e-12" }
+  max_native_relres: { type: str, default: "1e-12" }
+  max_krylov_relres: { type: str, default: "1e-12" }
+  julia_threads: { type: int, default: 4 }
+  blas_threads: { type: int, default: 1 }
+  omp_threads: { type: int, default: 1 }
+  mkl_threads: { type: int, default: 1 }
+  julia_depot: { type: str, default: "" }
+
+backends:
+  - backend: slurm
+    server: oblix
+
+artifacts:
+  - "host_env.txt"
+  - "benchmark.log"
+  - "artifact_files.txt"
+  - "results/*"
