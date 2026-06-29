@@ -17,10 +17,12 @@ Recommended commands from the repository root:
 
 ```sh
 julia --project=KrylovKitC -e 'using Pkg; Pkg.instantiate()'
-julia --project=TenetNative --startup-file=no benchmarks/krylovkit/run_cpu.jl
-julia --project=FastTeneT --startup-file=no benchmarks/krylovkit/run_gpu.jl
-python3 benchmarks/plots/plot_speedup.py results/krylovkit_cpu.csv results/figures/krylovkit_cpu_speedup.png
+KRYLOVKITC_RUN_RELEASE_GATE=1 julia --project=KrylovKitC -e 'using Pkg; Pkg.test()'
+julia --project=benchmarks/krylovkit -e 'using Pkg; Pkg.instantiate()'
+julia --project=benchmarks/krylovkit --startup-file=no benchmarks/krylovkit/run_cpu.jl
+julia --project=benchmarks/krylovkit --startup-file=no benchmarks/krylovkit/run_gpu.jl
+python3 benchmarks/plots/plot_speedup.py benchmarks/results/krylovkitc_cpu.csv KrylovKitC/docs/figures/krylovkitc_cpu_speedup.svg
 ```
 
-This branch contains local unregistered workspace dependency wiring for the
-benchmark environment.
+Use the JobFiles in `benchmarks/jobfiles/` for audited CPU/H100 runs. Commit only
+compact summaries and host metadata from jobctl artifacts.

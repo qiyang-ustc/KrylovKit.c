@@ -8,3 +8,7 @@ using KrylovKitC
     @test native_linsolve isa Function
     @test native_krylov_library isa Function
 end
+
+if get(ENV, "KRYLOVKITC_RUN_RELEASE_GATE", "0") == "1"
+    include(joinpath(@__DIR__, "..", "..", "TenetNative", "test", "native_krylovkit_parity.jl"))
+end

@@ -7,7 +7,7 @@ repo = normpath(joinpath(@__DIR__, "..", ".."))
 script = joinpath(repo, "harness", "scripts", "tenetnative_krylov_benchmark.jl")
 outdir = env_value("KRYLOVKITC_OUTDIR", joinpath(repo, "results", "krylovkitc_cpu"))
 
-cmd = `$(Base.julia_cmd()) --project=$(joinpath(repo, "TenetNative")) --startup-file=no $script
+cmd = `$(Base.julia_cmd()) --project=$(joinpath(repo, "benchmarks", "krylovkit")) --startup-file=no $script
     --repo $repo
     --outdir $outdir
     --backend cpu

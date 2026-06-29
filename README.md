@@ -1,7 +1,8 @@
 # KrylovKit.c
 
-Native CPU/CUDA backend experiments for Krylov-style eigensolvers and linear
-solvers. The Julia package lives in `KrylovKitC/`; install with:
+Preview / benchmark artifact for native CPU/CUDA Krylov-style eigensolver and
+linear-solver experiments. This is not a complete standard linear algebra
+library release. The Julia package lives in `KrylovKitC/`; install with:
 
 ```julia
 using Pkg
@@ -31,10 +32,13 @@ scientific source; treat it as an engineering backend and benchmark artifact.
 - `harness/scripts/tenetnative_krylov_benchmark.jl`: benchmark runner used by
   the checked-in jobfiles.
 
-## Performance Snapshot
+## Preliminary Performance Snapshot
 
-The headline figures are generated from measured benchmark artifacts and are
-kept in the package README. Small `chi=8` and `chi=16` runs are smoke tests only.
+The figures below are generated from compact summaries in `benchmarks/results/`.
+Current summaries are marked `pre_public_measured_subset` in
+`benchmarks/results/metadata.toml`; a public-main rerun should replace them
+before any formal release claim. Small `chi=8` and `chi=16` runs are smoke tests
+only.
 
 ![KrylovKit.c CPU speedup benchmark](KrylovKitC/docs/figures/krylovkitc_cpu_speedup.svg)
 

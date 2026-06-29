@@ -33,13 +33,13 @@ command: |
     git -C "$repo" rev-parse HEAD 2>/dev/null || true
     git -C "$repo" status --short 2>/dev/null || true
   ) > "$RUN_DIR/host_env.txt" 2>&1
-  "$julia" --project="$repo/TenetNative" -e "using Pkg; Pkg.instantiate(; update_registry=false)"
-  "$julia" --project="$repo/TenetNative" --startup-file=no \
+  "$julia" --project="$repo/benchmarks/krylovkit" -e "using Pkg; Pkg.instantiate(; update_registry=false)"
+  "$julia" --project="$repo/benchmarks/krylovkit" --startup-file=no \
     "$repo/benchmarks/krylovkit/run_cpu.jl" 2>&1 | tee "$RUN_DIR/benchmark.log"
   find "$RUN_DIR/results" -type f -print | sort > "$RUN_DIR/artifact_files.txt"'
 
 params:
-  repo: { type: str, default: "/home/qyang1/projects/LRIsing_oblix_campaign_20260625" }
+  repo: { type: str, default: "/home/qyang1/projects/KrylovKit.c" }
   julia: { type: str, default: "/home/qyang1/.juliaup/bin/julia" }
   chis: { type: str, default: "32,64,128" }
   warmup: { type: int, default: 2 }

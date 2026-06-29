@@ -1,0 +1,10 @@
+name=release-krylovkitc-snellius-h100
+repo=/home/qyang/source/LRIsing_krylovkitc_bench
+date_utc=2026-06-29T19:09:29Z
+chis=64,128,256
+cuda_module=2025 CUDA/12.8.0
+julia version 1.11.4
+/sw/arch/RHEL9/EB_production/2025/software/CUDA/12.8.0/bin/nvcc
+nvcc: NVIDIA (R) Cuda compiler driver
+GPU 0: NVIDIA H100 (UUID: GPU-aef217ba-358e-2e63-c12f-bd939f3ac21c)
+f93999276ba07580bc2400ed2bdddd9e059bcf09

@@ -1,0 +1,12 @@
+generated_at_utc = "2026-06-29T21:28:14.562392+00:00"
+source_kind = "pre_public_measured_subset"
+
+[krylovkitc_cpu]
+run_id = "run-2f2788a21035"
+summary = "benchmarks/results/krylovkitc_cpu.csv"
+host_env = "benchmarks/results/krylovkitc_cpu_host_env.txt"
+
+[krylovkitc_h100]
+run_id = "run-1d9b3b7f8834"
+summary = "benchmarks/results/krylovkitc_h100.csv"
+host_env = "benchmarks/results/krylovkitc_h100_host_env.txt"
