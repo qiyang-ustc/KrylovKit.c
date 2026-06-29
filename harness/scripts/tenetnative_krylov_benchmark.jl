@@ -40,6 +40,7 @@ function parse_args(argv)
         "howmany" => "1",
         "tol" => "1e-12",
         "krylov-maxiter" => "100",
+        "allow-failures" => "false",
         "warmup" => "1",
         "repeats" => "3",
         "seed" => "20260628",
@@ -76,6 +77,7 @@ function parse_args(argv)
               --howmany INT
               --tol FLOAT
               --krylov-maxiter INT
+              --allow-failures true|false
               --warmup INT
               --repeats INT
               --seed INT
@@ -108,6 +110,7 @@ function parse_args(argv)
         howmany = parse(Int, opts["howmany"]),
         tol = parse(Float64, opts["tol"]),
         krylov_maxiter = parse(Int, opts["krylov-maxiter"]),
+        allow_failures = lowercase(opts["allow-failures"]) in ("1", "true", "yes"),
         warmup = parse(Int, opts["warmup"]),
         repeats = parse(Int, opts["repeats"]),
         seed = parse(Int, opts["seed"]),
@@ -917,9 +920,10 @@ function main(argv)
     end
     csv_path = write_csv(joinpath(opts.outdir, stem * ".csv"), rows)
     md_path = write_markdown(joinpath(opts.outdir, stem * ".md"), rows, opts)
-    all(row -> row.status == "pass", rows) || error(
-        "benchmark regression detected; see $csv_path and $md_path",
-    )
+    if !all(row -> row.status == "pass", rows)
+        msg = "benchmark regression detected; see $csv_path and $md_path"
+        opts.allow_failures ? @warn(msg) : error(msg)
+    end
     println("TENET_NATIVE_BENCHMARK_DONE csv=$csv_path md=$md_path backend=$(opts.backend) timestamp=$(timestamp_utc())")
 end
 
