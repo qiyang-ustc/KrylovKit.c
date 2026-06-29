@@ -1,39 +1,28 @@
 # KrylovKit.c
 
-KrylovKit.c is a preview / benchmark artifact for native CPU/CUDA Krylov-style
-eigensolver and linear-solver experiments. It is not a complete standard linear
-algebra library release. The Julia module name is `KrylovKitC`.
+`KrylovKitC` exposes a native CPU/CUDA backend for KrylovKit-style solvers. It
+is a benchmark-first engineering backend, not a complete standard linear
+algebra library and not a replacement for KrylovKit.jl.
 
-## Acknowledgement
+## Installation
 
-KrylovKit.jl is the reference implementation and the semantic baseline for this
-package. We are grateful to Jutho Haegeman and the KrylovKit.jl contributors for
-the clear API and algorithmic design. This package is not a replacement for
-KrylovKit.jl. It is a native backend intended for workloads where a C/CUDA ABI,
-device-resident buffers, or specialized fast paths are useful.
+```julia
+using Pkg
+Pkg.add(url="https://github.com/qiyang-ustc/KrylovKit.c", subdir="KrylovKitC")
+```
 
-If this code is useful in your work, please cite and acknowledge the original
-KrylovKit.jl work by Jutho Haegeman and contributors. If you use it through
-TeneT.c, please also cite and acknowledge TeneT.jl by Xingyu Zhang and
-contributors. Please do not cite KrylovKit.c as the scientific source; this
-repository is an engineering backend and benchmark artifact.
+## Acknowledgement And Citation
 
-All public correctness tests and benchmarks should compare against KrylovKit.jl
-unless a smaller LAPACK oracle is explicitly more appropriate.
+KrylovKit.jl is the reference implementation and semantic baseline. We are
+grateful to Jutho Haegeman and the KrylovKit.jl contributors for the API,
+documentation, and algorithmic design. Please cite and acknowledge KrylovKit.jl
+by Jutho Haegeman and contributors when this backend is useful in scientific
+work. Please do not cite KrylovKit.c as the scientific source.
 
-## Preview Scope
+If this package is used through TeneT.c, please also cite and acknowledge
+TeneT.jl by Xingyu Zhang and contributors.
 
-- `native_eigsolve(A_or_f, x0, howmany=1, which=:LM; ...)`
-- `native_linsolve(A_or_f, b, x0=nothing, a0=0, a1=1; ...)`
-- CPU `Float64` and `ComplexF64` correctness gates.
-- CUDA correctness gates for supported device paths.
-- MPS-like two-layer fast path used by TeneT.c.
-
-The current implementation delegates to the existing native core in
-`TenetNative`. The release-facing API is kept separate so downstream packages can
-depend on KrylovKit.c without depending on TeneT.c.
-
-## Basic Usage
+## API Surface
 
 ```julia
 using KrylovKitC
@@ -43,81 +32,112 @@ x0 = randn(128)
 vals, vecs, info = native_eigsolve(A, x0, 1, :LM; krylovdim=30, tol=1e-12)
 ```
 
-Build or select the native shared library explicitly:
+The release wrapper forwards to the native core in `TenetNative` while keeping a
+separate package boundary for downstream users.
 
-```julia
-lib = build_native_krylov(target=:cpu)
-vals, vecs, info = native_eigsolve(A, x0; lib)
-```
+## What Is Measured
 
-## Preliminary Performance
+| Area | Coverage |
+| :--- | :--- |
+| Eigensolver | `native_eigsolve`, Arnoldi/Krylov-Schur style API |
+| Linsolver | `native_linsolve`, GMRES/CG/BiCGStab |
+| Scalars | CPU `Float64`, CPU `ComplexF64`, CUDA `Float64` fast path |
+| Operators | Dense matrix, CPU callback, MPS-like native fast path |
+| Baseline | KrylovKit.jl on the same generated problems |
 
-README figures are generated from compact summaries in `benchmarks/results/`,
-not edited by hand. `benchmarks/results/metadata.toml` records whether each
-artifact is a public-main measurement or a preliminary subset. The measurements
-below use warmup 2 and repeat 7.
+The current performance headline is restricted to the MPS-like fast path.
+Generic callbacks are correctness-tested but not advertised as generally faster
+than KrylovKit.jl.
 
-CPU fallback run, local Apple Silicon, `run-2f2788a21035`, commit `4acd3aa`,
-source summary `benchmarks/results/krylovkitc_cpu.csv`. This is preliminary:
-the public-main Oblix run `run-702d068ecb76` was cancelled because the requested
-node was unavailable/reserved.
+## Correctness Gate
 
-| chi | native median (s) | KrylovKit median (s) | speedup | native residual |
-| ---: | ---: | ---: | ---: | ---: |
-| 32 | 0.001561 | 0.001451 | 0.93x | 4.21e-13 |
-| 64 | 0.009271 | 0.011164 | 1.20x | 6.35e-15 |
-| 128 | 0.065306 | 0.082468 | 1.26x | 5.16e-14 |
-
-![KrylovKit.c CPU speedup benchmark](docs/figures/krylovkitc_cpu_speedup.svg)
-
-![KrylovKit.c CPU residual benchmark](docs/figures/krylovkitc_cpu_residuals.svg)
-
-H100 run, Snellius `gpu_h100`, `run-af7601bb0e53`, commit `40926d4`, source
-summary `benchmarks/results/krylovkitc_h100.csv`:
-
-| chi | native median (s) | KrylovKit median (s) | speedup | native residual |
-| ---: | ---: | ---: | ---: | ---: |
-| 64 | 0.022977 | 0.019388 | 0.84x | 2.91e-14 |
-| 128 | 0.023078 | 0.092304 | 4.00x | 5.75e-13 |
-| 256 | 0.036957 | 0.481650 | 13.03x | 6.00e-14 |
-
-The `chi=64` H100 row passes the residual gate but fails the performance gate;
-it is reported here rather than hidden.
-
-![KrylovKit.c H100 speedup benchmark](docs/figures/krylovkitc_h100_speedup.svg)
-
-![KrylovKit.c H100 residual benchmark](docs/figures/krylovkitc_h100_residuals.svg)
-
-Generate replacement figures from release artifacts:
-
-```sh
-python3 benchmarks/plots/plot_speedup.py benchmarks/results/krylovkitc_cpu.csv KrylovKitC/docs/figures/krylovkitc_cpu_speedup.svg
-python3 benchmarks/plots/plot_residuals.py benchmarks/results/krylovkitc_cpu.csv KrylovKitC/docs/figures/krylovkitc_cpu_residuals.svg
-python3 benchmarks/plots/plot_speedup.py benchmarks/results/krylovkitc_h100.csv KrylovKitC/docs/figures/krylovkitc_h100_speedup.svg
-python3 benchmarks/plots/plot_residuals.py benchmarks/results/krylovkitc_h100.csv KrylovKitC/docs/figures/krylovkitc_h100_residuals.svg
-```
-
-## Benchmark Rules
-
-Formal benchmark claims must come from CSV/JSON artifacts generated by the
-release benchmark scripts. Small `chi=8` or `chi=16` runs are smoke tests only
-and must not be used as speedup claims.
-
-Recommended formal matrix:
-
-- CPU: `chi=32,64,128`, warmup 2, repeat 7.
-- H100: `chi=64,128,256`, warmup 2, repeat 7.
-- Correctness: CPU residual `<=1e-12`, H100 residual `<=1e-10`.
-
-## Test Gates
-
-The default package test is intentionally light. Run the release gate with:
+Run the release gate with:
 
 ```sh
 KRYLOVKITC_RUN_RELEASE_GATE=1 julia --project=KrylovKitC -e 'using Pkg; Pkg.test()'
 ```
 
-That gate includes dense real/complex oracle cases, callback parity,
-KrylovKit.jl parity, selector checks, shifted `a0+a1A` linsolve semantics,
-GMRES/CG/BiCGStab, zero RHS, nonconvergence, breakdown, repeated/clustered
-eigenvalues, and ill-conditioned linsolve cases.
+The gate includes:
+
+| Category | Cases |
+| :--- | :--- |
+| Dense oracle | real/complex normal, Hermitian, non-normal |
+| Spectral edge cases | clustered, repeated, conjugate pairs, defective/Jordan-like |
+| Arnoldi behavior | exact breakdown, nonconvergence, `howmany > 1` |
+| Selectors | `:LM/:SM/:LR/:SR/:LI/:SI` |
+| Complex semantics | conjugate inner product and adjoint behavior |
+| Linsolve | zero RHS, shifted `a0+a1A`, GMRES, CG, BiCGStab, ill-conditioned case |
+| Backend parity | dense matrix, CPU callback, MPS fast path, CUDA fast path when available |
+
+Acceptance thresholds:
+
+| Backend | Residual gate |
+| :--- | ---: |
+| CPU `Float64/ComplexF64` | `<= 1e-12` |
+| H100 CUDA fast path | `<= 1e-10` |
+
+## Performance Evidence
+
+Figures and tables are generated from committed CSV artifacts in
+`benchmarks/results/`.
+
+```sh
+python3 benchmarks/plots/plot_release_figures.py
+```
+
+### CPU
+
+Current CPU artifact is a partial pre-public subset because the public-main
+Oblix run was previously blocked by node availability. It is kept visible but
+not used as a headline claim.
+
+| chi | KrylovKit.c median (s) | KrylovKit.jl median (s) | speedup | native residual |
+| ---: | ---: | ---: | ---: | ---: |
+| 32 | 0.001561 | 0.001451 | 0.93x | 4.21e-13 |
+| 64 | 0.009271 | 0.011164 | 1.20x | 6.35e-15 |
+| 128 | 0.065306 | 0.082468 | 1.26x | 5.16e-14 |
+
+![KrylovKit.c CPU speedup](docs/figures/krylovkitc_cpu_speedup.svg)
+
+### H100
+
+Public-main H100 run `run-af7601bb0e53`, Snellius `gpu_h100`, commit
+`40926d4`, warmup 2, repeat 7, tolerance `1e-12`.
+
+| chi | KrylovKit.c median (s) | KrylovKit.jl median (s) | speedup | native residual | status |
+| ---: | ---: | ---: | ---: | ---: | :--- |
+| 64 | 0.022977 | 0.019388 | 0.84x | 2.91e-14 | performance gate failed |
+| 128 | 0.023078 | 0.092304 | 4.00x | 5.75e-13 | passed |
+| 256 | 0.036957 | 0.481650 | 13.03x | 6.00e-14 | passed |
+
+The `chi=64` row passes the residual gate but fails the performance gate. It is
+reported rather than hidden.
+
+![KrylovKit.c H100 speedup](docs/figures/krylovkitc_h100_speedup.svg)
+
+![KrylovKit.c H100 residuals](docs/figures/krylovkitc_h100_residuals.svg)
+
+![KrylovKit.c H100 runtime](docs/figures/krylovkitc_h100_runtime.svg)
+
+## Expanded Release Sweep
+
+```sh
+bash benchmarks/run_release_suite.sh
+```
+
+Planned matrix:
+
+| Backend | chi values | warmup | repeats | tolerance |
+| :--- | :--- | ---: | ---: | ---: |
+| CPU Oblix | `16,24,32,48,64,96,128,192` | 2 | 9 | `1e-12` |
+| H100 Snellius | `32,48,64,96,128,192,256,384` | 3 | 11 | `1e-12` |
+
+No claim is made for missing, timed-out, or smoke-test rows.
+
+## Limitations
+
+- This is not full KrylovKit.jl feature coverage.
+- Generic callbacks are correctness paths first; they are not a general speedup
+  claim.
+- Current CPU artifact is partial until the expanded Oblix run completes.
+- Complex CUDA is not yet a headline performance claim.

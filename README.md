@@ -1,8 +1,9 @@
 # KrylovKit.c
 
-Preview / benchmark artifact for native CPU/CUDA Krylov-style eigensolver and
-linear-solver experiments. This is not a complete standard linear algebra
-library release. The Julia package lives in `KrylovKitC/`; install with:
+KrylovKit.c is a benchmark-first native Krylov backend for selected
+KrylovKit-style eigensolver and linear-solver experiments. It is not a complete
+replacement for KrylovKit.jl and should not be cited as the scientific source.
+The release-facing Julia package lives in `KrylovKitC/`.
 
 ```julia
 using Pkg
@@ -13,41 +14,74 @@ Pkg.add(url="https://github.com/qiyang-ustc/KrylovKit.c", subdir="KrylovKitC")
 
 KrylovKit.jl is the reference implementation and semantic baseline for this
 work. We are grateful to Jutho Haegeman and the KrylovKit.jl contributors for
-the clear API, documentation, and algorithmic design. This repository is not a
-replacement for KrylovKit.jl; it is a native backend for workloads where a
-C/CUDA ABI, device-resident buffers, or specialized fast paths are useful.
+the API, documentation, and algorithmic design. If this backend is useful in
+your work, please cite and acknowledge KrylovKit.jl by Jutho Haegeman and
+contributors. If you use it through the TeneT.c tensor-network benchmarks,
+please also cite and acknowledge TeneT.jl by Xingyu Zhang and contributors.
 
-If this code is useful in your work, please cite and acknowledge the original
-KrylovKit.jl work by Jutho Haegeman and contributors. If you use it through the
-TeneT.c tensor-network benchmarks, please also cite and acknowledge TeneT.jl by
-Xingyu Zhang and contributors. Please do not cite this repository as the
-scientific source; treat it as an engineering backend and benchmark artifact.
+## What Is Measured
 
-## Layout
+- `native_eigsolve` and `native_linsolve` wrappers over the native C++/CUDA core.
+- CPU `Float64` and `ComplexF64` dense/callback correctness.
+- CUDA `Float64` MPS-like two-layer fast path used by TeneT.c.
+- KrylovKit.jl parity on the same generated MPS-like transfer problems.
 
-- `KrylovKitC/`: release-facing Julia wrapper package.
-- `TenetNative/`: native C++/CUDA implementation used by the wrapper.
-- `benchmarks/`: CPU/H100 benchmark scripts, jobfiles, plotting scripts, and
-  artifact conventions.
-- `harness/scripts/tenetnative_krylov_benchmark.jl`: benchmark runner used by
-  the checked-in jobfiles.
+Generic user callbacks are tested for correctness but are not advertised as
+generally faster than KrylovKit.jl. The current headline workload is the
+MPS-like fast path.
 
-## Preliminary Performance Snapshot
+## Correctness Before Speed
 
-The figures below are generated from compact summaries in `benchmarks/results/`.
-`benchmarks/results/metadata.toml` records the source run for each artifact.
-The H100 summary is a public-main measurement; the CPU summary is still a
-pre-public subset because the public-main Oblix run was cancelled when the
-requested node was unavailable/reserved. Small `chi=8` and `chi=16` runs are
-smoke tests only.
+The release gate covers dense real/complex oracle cases, Hermitian and
+non-normal matrices, clustered/repeated eigenvalues, complex conjugate pairs,
+Jordan-like defective cases, exact breakdown, nonconvergence,
+`:LM/:SM/:LR/:SR/:LI/:SI` selectors, complex conjugate inner products, shifted
+`a0+a1A` linsolve semantics, GMRES, CG, BiCGStab, zero RHS, and
+ill-conditioned linsolve cases.
 
-![KrylovKit.c CPU speedup benchmark](KrylovKitC/docs/figures/krylovkitc_cpu_speedup.svg)
+```sh
+KRYLOVKITC_RUN_RELEASE_GATE=1 julia --project=KrylovKitC -e 'using Pkg; Pkg.test()'
+```
 
-![KrylovKit.c CPU residual benchmark](KrylovKitC/docs/figures/krylovkitc_cpu_residuals.svg)
+Numerical gates:
 
-![KrylovKit.c H100 speedup benchmark](KrylovKitC/docs/figures/krylovkitc_h100_speedup.svg)
+- CPU residual: `<= 1e-12`
+- H100 residual: `<= 1e-10`
 
-![KrylovKit.c H100 residual benchmark](KrylovKitC/docs/figures/krylovkitc_h100_residuals.svg)
+## Performance Evidence
 
-See `KrylovKitC/README.md` for the full tables, run IDs, tolerances, and
-reproduction commands.
+All README figures are generated from committed artifacts under
+`benchmarks/results/`:
+
+```sh
+python3 benchmarks/plots/plot_release_figures.py
+```
+
+Current public artifacts are still partial. The expanded release suite targets
+8 chi values per major curve; figures explicitly label partial coverage until
+that data is present.
+
+![CPU speedup](KrylovKitC/docs/figures/krylovkitc_cpu_speedup.svg)
+
+![H100 speedup](KrylovKitC/docs/figures/krylovkitc_h100_speedup.svg)
+
+![H100 residuals](KrylovKitC/docs/figures/krylovkitc_h100_residuals.svg)
+
+![H100 runtime](KrylovKitC/docs/figures/krylovkitc_h100_runtime.svg)
+
+Detailed tables, run IDs, limitations, and reproduction commands are in
+`KrylovKitC/README.md`.
+
+## Expanded Release Sweep
+
+```sh
+bash benchmarks/run_release_suite.sh
+```
+
+Planned matrix:
+
+- CPU Oblix: `chi=16,24,32,48,64,96,128,192`, warmup 2, repeat 9.
+- H100 Snellius: `chi=32,48,64,96,128,192,256,384`, warmup 3, repeat 11.
+- Tolerance: `1e-12`; Krylov dimension: `30`; maxiter: `100`.
+
+No speedup claim is made for missing, timed-out, or smoke-test rows.

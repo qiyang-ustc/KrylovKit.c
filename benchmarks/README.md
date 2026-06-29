@@ -8,8 +8,8 @@ This directory contains the release-facing benchmark suite for the two packages:
 Small jobs are smoke tests only. Headline release claims must use the large
 defaults:
 
-- CPU: `chi=32,64,128`, warmup 2, repeat 7.
-- H100: `chi=64,128,256`, warmup 2, repeat 7.
+- CPU Oblix: `chi=16,24,32,48,64,96,128,192`, warmup 2, repeat 9.
+- H100 Snellius: `chi=32,48,64,96,128,192,256,384`, warmup 3, repeat 11.
 
 Every run must preserve raw CSV/TSV data, host metadata, package commits, thread
 counts, BLAS/CUDA versions, tolerance, Krylov dimension, max iteration count,
@@ -17,3 +17,9 @@ seed, residuals, and timing quantiles.
 
 Checked-in summaries under `benchmarks/results/` are compact release artifacts.
 Full jobctl run directories and Julia manifests are not committed.
+
+Run the expanded release suite with:
+
+```sh
+bash benchmarks/run_release_suite.sh
+```

@@ -52,9 +52,9 @@ params:
   repo: { type: str, default: "/home/qyang/source/KrylovKit.c" }
   julia: { type: str, default: "/gpfs/home1/qyang/.juliaup/bin/julia" }
   cuda_module: { type: str, default: "2025 CUDA/12.8.0" }
-  chis: { type: str, default: "64,128,256" }
-  warmup: { type: int, default: 2 }
-  repeats: { type: int, default: 7 }
+  chis: { type: str, default: "32,48,64,96,128,192,256,384" }
+  warmup: { type: int, default: 3 }
+  repeats: { type: int, default: 11 }
   tol: { type: str, default: "1e-12" }
   krylovdim: { type: int, default: 30 }
   maxiter: { type: int, default: 100 }

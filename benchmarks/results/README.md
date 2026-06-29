@@ -9,3 +9,9 @@ figures needed for README claims.
 `metadata.toml` records the source and status for each committed artifact.
 Do not promote a row to a headline claim unless the corresponding raw summary,
 host metadata, and source run ID are present here.
+
+Regenerate the Markdown table summary with:
+
+```sh
+python3 benchmarks/results/render_release_tables.py
+```

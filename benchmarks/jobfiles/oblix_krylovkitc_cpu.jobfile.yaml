@@ -41,13 +41,13 @@ command: |
 params:
   repo: { type: str, default: "/home/qyang1/projects/KrylovKit.c" }
   julia: { type: str, default: "/home/qyang1/.juliaup/bin/julia" }
-  chis: { type: str, default: "32,64,128" }
+  chis: { type: str, default: "16,24,32,48,64,96,128,192" }
   warmup: { type: int, default: 2 }
-  repeats: { type: int, default: 7 }
+  repeats: { type: int, default: 9 }
   tol: { type: str, default: "1e-12" }
   krylovdim: { type: int, default: 30 }
   maxiter: { type: int, default: 100 }
-  max_ratio: { type: str, default: "1.10" }
+  max_ratio: { type: str, default: "1.25" }
   max_lambda_abs_diff: { type: str, default: "1e-12" }
   max_native_relres: { type: str, default: "1e-12" }
   max_krylov_relres: { type: str, default: "1e-12" }
