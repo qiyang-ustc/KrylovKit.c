@@ -53,13 +53,14 @@ vals, vecs, info = native_eigsolve(A, x0; lib)
 ## Preliminary Performance
 
 README figures are generated from compact summaries in `benchmarks/results/`,
-not edited by hand. Current summaries are marked `pre_public_measured_subset` in
-`benchmarks/results/metadata.toml`; a public-main rerun should replace them
-before any formal release claim. The measurements below use warmup 2 and repeat
-7.
+not edited by hand. `benchmarks/results/metadata.toml` records whether each
+artifact is a public-main measurement or a preliminary subset. The measurements
+below use warmup 2 and repeat 7.
 
 CPU fallback run, local Apple Silicon, `run-2f2788a21035`, commit `4acd3aa`,
-source summary `benchmarks/results/krylovkitc_cpu.csv`:
+source summary `benchmarks/results/krylovkitc_cpu.csv`. This is preliminary:
+the public-main Oblix run `run-702d068ecb76` was cancelled because the requested
+node was unavailable/reserved.
 
 | chi | native median (s) | KrylovKit median (s) | speedup | native residual |
 | ---: | ---: | ---: | ---: | ---: |
@@ -71,14 +72,17 @@ source summary `benchmarks/results/krylovkitc_cpu.csv`:
 
 ![KrylovKit.c CPU residual benchmark](docs/figures/krylovkitc_cpu_residuals.svg)
 
-H100 run, Snellius `gpu_h100`, `run-1d9b3b7f8834`, commit `f939992`, source
+H100 run, Snellius `gpu_h100`, `run-af7601bb0e53`, commit `40926d4`, source
 summary `benchmarks/results/krylovkitc_h100.csv`:
 
 | chi | native median (s) | KrylovKit median (s) | speedup | native residual |
 | ---: | ---: | ---: | ---: | ---: |
-| 64 | 0.022563 | 0.019309 | 0.86x | 2.91e-14 |
-| 128 | 0.022690 | 0.092323 | 4.07x | 5.75e-13 |
-| 256 | 0.036217 | 0.438237 | 12.10x | 6.00e-14 |
+| 64 | 0.022977 | 0.019388 | 0.84x | 2.91e-14 |
+| 128 | 0.023078 | 0.092304 | 4.00x | 5.75e-13 |
+| 256 | 0.036957 | 0.481650 | 13.03x | 6.00e-14 |
+
+The `chi=64` H100 row passes the residual gate but fails the performance gate;
+it is reported here rather than hidden.
 
 ![KrylovKit.c H100 speedup benchmark](docs/figures/krylovkitc_h100_speedup.svg)
 

@@ -35,10 +35,11 @@ scientific source; treat it as an engineering backend and benchmark artifact.
 ## Preliminary Performance Snapshot
 
 The figures below are generated from compact summaries in `benchmarks/results/`.
-Current summaries are marked `pre_public_measured_subset` in
-`benchmarks/results/metadata.toml`; a public-main rerun should replace them
-before any formal release claim. Small `chi=8` and `chi=16` runs are smoke tests
-only.
+`benchmarks/results/metadata.toml` records the source run for each artifact.
+The H100 summary is a public-main measurement; the CPU summary is still a
+pre-public subset because the public-main Oblix run was cancelled when the
+requested node was unavailable/reserved. Small `chi=8` and `chi=16` runs are
+smoke tests only.
 
 ![KrylovKit.c CPU speedup benchmark](KrylovKitC/docs/figures/krylovkitc_cpu_speedup.svg)
 

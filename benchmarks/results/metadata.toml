@@ -1,12 +1,16 @@
-generated_at_utc = "2026-06-29T21:28:14.562392+00:00"
-source_kind = "pre_public_measured_subset"
+generated_at_utc = "2026-06-29T22:32:00Z"
+source_kind = "mixed_public_main_and_pre_public_subset"
 
 [krylovkitc_cpu]
 run_id = "run-2f2788a21035"
+source_kind = "pre_public_measured_subset"
 summary = "benchmarks/results/krylovkitc_cpu.csv"
 host_env = "benchmarks/results/krylovkitc_cpu_host_env.txt"
+note = "Public-main Oblix run run-702d068ecb76 was cancelled because the requested node was unavailable/reserved; keep this CPU subset as preliminary only."
 
 [krylovkitc_h100]
-run_id = "run-1d9b3b7f8834"
+run_id = "run-af7601bb0e53"
+source_kind = "public_main"
 summary = "benchmarks/results/krylovkitc_h100.csv"
 host_env = "benchmarks/results/krylovkitc_h100_host_env.txt"
+status = "residual_gate_passed; chi64 performance_gate_failed; chi128_chi256 performance_gate_passed"
