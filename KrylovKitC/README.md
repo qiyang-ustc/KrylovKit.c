@@ -108,3 +108,16 @@ Recommended formal matrix:
 - CPU: `chi=32,64,128`, warmup 2, repeat 7.
 - H100: `chi=64,128,256`, warmup 2, repeat 7.
 - Correctness: CPU residual `<=1e-12`, H100 residual `<=1e-10`.
+
+## Test Gates
+
+The default package test is intentionally light. Run the release gate with:
+
+```sh
+KRYLOVKITC_RUN_RELEASE_GATE=1 julia --project=KrylovKitC -e 'using Pkg; Pkg.test()'
+```
+
+That gate includes dense real/complex oracle cases, callback parity,
+KrylovKit.jl parity, selector checks, shifted `a0+a1A` linsolve semantics,
+GMRES/CG/BiCGStab, zero RHS, nonconvergence, breakdown, repeated/clustered
+eigenvalues, and ill-conditioned linsolve cases.

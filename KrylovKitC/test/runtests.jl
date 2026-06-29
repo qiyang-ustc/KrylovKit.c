@@ -10,5 +10,6 @@ using KrylovKitC
 end
 
 if get(ENV, "KRYLOVKITC_RUN_RELEASE_GATE", "0") == "1"
+    include(joinpath(@__DIR__, "..", "..", "TenetNative", "test", "native_krylov_cpu.jl"))
     include(joinpath(@__DIR__, "..", "..", "TenetNative", "test", "native_krylovkit_parity.jl"))
 end
