@@ -1,28 +1,15 @@
 # Reproducing KrylovKit.c Results
 
-All release results must be generated from scripts under `benchmarks/krylovkit`
-or the equivalent jobfiles that call those scripts.
+Use jobctl from the repository root:
 
-Required metadata:
-
-- KrylovKit.c commit and dirty status.
-- KrylovKit.jl version.
-- Julia version.
-- CPU/GPU model.
-- BLAS/CUDA/cuBLAS/cuTENSOR versions.
-- Threads and environment variables.
-- Problem size, tolerance, `krylovdim`, `maxiter`, and seed.
-
-Recommended commands from the repository root:
-
-```sh
-julia --project=KrylovKitC -e 'using Pkg; Pkg.instantiate()'
-KRYLOVKITC_RUN_RELEASE_GATE=1 julia --project=KrylovKitC -e 'using Pkg; Pkg.test()'
-julia --project=benchmarks/krylovkit -e 'using Pkg; Pkg.instantiate()'
-julia --project=benchmarks/krylovkit --startup-file=no benchmarks/krylovkit/run_cpu.jl
-julia --project=benchmarks/krylovkit --startup-file=no benchmarks/krylovkit/run_gpu.jl
-python3 benchmarks/plots/plot_speedup.py benchmarks/results/krylovkitc_cpu.csv KrylovKitC/docs/figures/krylovkitc_cpu_speedup.svg
+```bash
+bash benchmarks/run_release_suite.sh
 ```
 
-Use the JobFiles in `benchmarks/jobfiles/` for audited CPU/H100 runs. Commit only
-compact summaries and host metadata from jobctl artifacts.
+The CPU job runs on Oblix with `--cpus 4 --mem 4G --time 02:00:00`.
+The GPU job runs on Snellius H100 with `--partition gpu_h100 --gres gpu:h100:1
+--cpus 16 --mem 180G --time 01:30:00`.
+
+Both jobs use `chi = 32,64,96,128,160,192,224,256`, 3 warmup runs, 11 timed
+repeats, `KRYLOVKITC_TOL=1e-12`, `KRYLOVKITC_KRYLOVDIM=30`, and
+`KRYLOVKITC_MAXITER=100`.

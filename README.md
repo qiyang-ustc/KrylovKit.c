@@ -1,90 +1,12 @@
 # KrylovKit.c
 
-KrylovKit.c is a benchmark-first native Krylov backend for selected
-KrylovKit-style eigensolver and linear-solver experiments. It is not a complete
-replacement for KrylovKit.jl and should not be cited as the scientific source.
-The release-facing Julia package lives in `KrylovKitC/`.
+This release benchmark measures warmed Krylov kernel timing against KrylovKit.jl
+on the same backend and the same real `Float64` arithmetic.
 
-```julia
-using Pkg
-Pkg.add(url="https://github.com/qiyang-ustc/KrylovKit.c", subdir="KrylovKitC")
-```
+Official CPU results are run on Oblix with `--cpus 4 --mem 4G`. Official GPU
+results are run on Snellius H100 with one H100 allocation and `--mem 180G`.
+CPU and GPU results are reported as separate tables.
 
-## Acknowledgement
-
-KrylovKit.jl is the reference implementation and semantic baseline for this
-work. We are grateful to Jutho Haegeman and the KrylovKit.jl contributors for
-the API, documentation, and algorithmic design. If this backend is useful in
-your work, please cite and acknowledge KrylovKit.jl by Jutho Haegeman and
-contributors. If you use it through the TeneT.c tensor-network benchmarks,
-please also cite and acknowledge TeneT.jl by Xingyu Zhang and contributors.
-
-## What Is Measured
-
-- `native_eigsolve` and `native_linsolve` wrappers over the native C++/CUDA core.
-- CPU `Float64` and `ComplexF64` dense/callback correctness.
-- CUDA `Float64` MPS-like two-layer fast path used by TeneT.c.
-- KrylovKit.jl parity on the same generated MPS-like transfer problems.
-
-Generic user callbacks are tested for correctness but are not advertised as
-generally faster than KrylovKit.jl. The current headline workload is the
-MPS-like fast path.
-
-## Correctness Before Speed
-
-The release gate covers dense real/complex oracle cases, Hermitian and
-non-normal matrices, clustered/repeated eigenvalues, complex conjugate pairs,
-Jordan-like defective cases, exact breakdown, nonconvergence,
-`:LM/:SM/:LR/:SR/:LI/:SI` selectors, complex conjugate inner products, shifted
-`a0+a1A` linsolve semantics, GMRES, CG, BiCGStab, zero RHS, and
-ill-conditioned linsolve cases.
-
-```sh
-KRYLOVKITC_RUN_RELEASE_GATE=1 julia --project=KrylovKitC -e 'using Pkg; Pkg.test()'
-```
-
-Numerical gates:
-
-- CPU residual: `<= 1e-12`
-- H100 residual: `<= 1e-10`
-
-## Performance Evidence
-
-All README figures are generated from committed artifacts under
-`benchmarks/results/`:
-
-```sh
-python3 benchmarks/plots/plot_release_figures.py
-```
-
-Current public artifacts include 8 CPU-backend points and 8 H100 fast-path
-points. The H100 speedup figure compares KrylovKit.c CUDA native fast path with
-KrylovKit.jl running the CPU operator baseline on the same generated problems;
-it is not a GPU-vs-GPU KrylovKit comparison. The CPU-backend run was measured on
-a Snellius `gpu_h100` allocation because the intended CPU queues were
-unavailable; it did not use CUDA.
-
-![CPU speedup](KrylovKitC/docs/figures/krylovkitc_cpu_speedup.svg)
-
-![H100 speedup](KrylovKitC/docs/figures/krylovkitc_h100_speedup.svg)
-
-![H100 residuals](KrylovKitC/docs/figures/krylovkitc_h100_residuals.svg)
-
-![H100 runtime](KrylovKitC/docs/figures/krylovkitc_h100_runtime.svg)
-
-Detailed tables, run IDs, limitations, and reproduction commands are in
-`KrylovKitC/README.md`.
-
-## Expanded Release Sweep
-
-```sh
-bash benchmarks/run_release_suite.sh
-```
-
-Measured matrix:
-
-- CPU backend on Snellius H100 node: `chi=16,24,32,48,64,96,128,192`, warmup 2, repeat 9.
-- H100 Snellius CUDA fast path: `chi=32,48,64,96,128,192,256,384`, warmup 3, repeat 11; baseline is KrylovKit.jl CPU operator timing, not a KrylovKit.jl GPU implementation.
-- Tolerance: `1e-12`; Krylov dimension: `30`; maxiter: `100`.
-
-No speedup claim is made for missing, timed-out, or smoke-test rows.
+The release sweep is `chi = 32,64,96,128,160,192,224,256`, with 3 warmup runs
+and 11 timed repeats. Krylov residuals, iteration counts, operation counts, and
+correctness status are part of the benchmark output.

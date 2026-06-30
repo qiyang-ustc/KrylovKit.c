@@ -1,0 +1,15 @@
+name=release-krylovkitc-oblix-cpu
+machine=Oblix
+requested_mem=4G
+comparison=cpu_vs_cpu
+eltype=Float64
+repo=/home/qyang1/projects/release_bench_20260630/KrylovKit.c
+date_utc=2026-06-30T11:14:46Z
+chis=32,64,96,128,160,192,224,256
+warmup=3
+repeats=11
+phys=2
+howmany=1
+threads=JULIA:1 OPENBLAS:1 OMP:1 MKL:1
+julia version 1.11.7
+repo_commit=98b7fdec8ff6eb7ea4bdedf4d6fa673a2551ed20

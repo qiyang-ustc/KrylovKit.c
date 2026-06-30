@@ -1,29 +1,28 @@
-# Release Benchmarks
+# KrylovKit.c Benchmarks
 
-This directory contains the release-facing benchmark suite for the two packages:
+The release benchmark suite measures warmed Krylov eigensolver kernel timing.
+It is not a VUMPS benchmark.
 
-- `KrylovKit.c` (`KrylovKitC`): KrylovKit.jl vs native Krylov backend.
-- `TeneT.c` (`TeneTC`): TeneT.jl master vs native TeneT backend.
+Allowed comparisons:
 
-Small jobs are smoke tests only. Headline release claims must use the large
-defaults:
+- CPU on Oblix: native CPU versus KrylovKit.jl CPU, both `Float64`.
+- GPU on Snellius H100: native CUDA versus KrylovKit.jl CUDA/CuArray, both
+  real `Float64`.
 
-- CPU backend: `chi=16,24,32,48,64,96,128,192`, warmup 2, repeat 9.
-  The preferred CPU queue is Oblix; the current committed release artifact was
-  measured on a Snellius H100-node CPU allocation because the regular CPU queues
-  were unavailable.
-- H100 Snellius CUDA fast path: `chi=32,48,64,96,128,192,256,384`, warmup 3,
-  repeat 11.
+Default sweep:
 
-Every run must preserve raw CSV/TSV data, host metadata, package commits, thread
-counts, BLAS/CUDA versions, tolerance, Krylov dimension, max iteration count,
-seed, residuals, and timing quantiles.
+- `KRYLOVKITC_CHIS=32,64,96,128,160,192,224,256`
+- `KRYLOVKITC_WARMUP=3`
+- `KRYLOVKITC_REPEATS=11`
+- `KRYLOVKITC_TOL=1e-12`
+- `KRYLOVKITC_KRYLOVDIM=30`
+- `KRYLOVKITC_MAXITER=100`
+- `KRYLOVKITC_PHYS=2`
+- `KRYLOVKITC_HOWMANY=1`
+- `KRYLOVKITC_ALLOW_FAILURES=false`
 
-Checked-in summaries under `benchmarks/results/` are compact release artifacts.
-Full jobctl run directories and Julia manifests are not committed.
+Run all official jobs through jobctl:
 
-Run the expanded release suite with:
-
-```sh
+```bash
 bash benchmarks/run_release_suite.sh
 ```

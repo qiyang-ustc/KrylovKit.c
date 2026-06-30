@@ -1,15 +1,11 @@
 # Release JobFiles
 
-These JobFiles are thin release entrypoints. They call the benchmark scripts in
-`benchmarks/` and leave raw logs/results under the job run directory.
+Official release jobs:
 
-Use small `chis=8,16` overrides only for smoke tests. Formal benchmark claims
-must use the expanded defaults and committed compact artifacts.
+- `oblix_krylovkitc_cpu.jobfile.yaml`: CPU run on Oblix `lerner`, requested
+  as `--partition lerner --cpus 4 --mem 4G --time 02:00:00`.
+- `snellius_krylovkitc_h100.jobfile.yaml`: GPU run on Snellius H100, requested
+  as `--partition gpu_h100 --gres gpu:h100:1 --cpus 16 --mem 180G`.
 
-Default release matrix:
-
-- CPU Oblix: `16,24,32,48,64,96,128,192`, warmup 2, repeat 9.
-- H100 Snellius: `32,48,64,96,128,192,256,384`, warmup 3, repeat 11.
-
-The default `repo` parameters point at public-repo checkout locations on the
-target hosts. Override them with `-p repo=/path/to/KrylovKit.c` when needed.
+Both jobs prebuild the native library before timed measurement and copy the
+final CSV to the artifact name used by the release README.

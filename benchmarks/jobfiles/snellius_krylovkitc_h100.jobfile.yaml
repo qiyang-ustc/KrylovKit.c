@@ -13,6 +13,7 @@ command: |
   fi
   mkdir -p "$RUN_DIR/results"
   export JULIA_NUM_THREADS="{julia_threads}"
+  export JULIA_PKG_PRECOMPILE_AUTO=0
   export OPENBLAS_NUM_THREADS="{blas_threads}"
   export OMP_NUM_THREADS="{omp_threads}"
   export MKL_NUM_THREADS="{mkl_threads}"
@@ -27,45 +28,61 @@ command: |
   export KRYLOVKITC_KRYLOVDIM="{krylovdim}"
   export KRYLOVKITC_MAXITER="{maxiter}"
   export KRYLOVKITC_ALLOW_FAILURES="{allow_failures}"
+  export KRYLOVKITC_PHYS="{phys}"
+  export KRYLOVKITC_HOWMANY="{howmany}"
   export KRYLOVKITC_MAX_RATIO="{max_ratio}"
   export KRYLOVKITC_MAX_LAMBDA_ABS_DIFF="{max_lambda_abs_diff}"
   export KRYLOVKITC_MAX_NATIVE_RELRES="{max_native_relres}"
   export KRYLOVKITC_MAX_KRYLOV_RELRES="{max_krylov_relres}"
+  export TENET_NATIVE_ARNOLDI_CUDA_LIB="$repo/TenetNative/deps/libtenet_native_arnoldi_cuda.so"
   (
     echo "name=release-krylovkitc-snellius-h100"
+    echo "machine=Snellius H100"
+    echo "requested_mem=180G"
+    echo "comparison=gpu_vs_gpu"
+    echo "eltype=CuArray{{Float64}}"
     echo "repo=$repo"
     echo "date_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
     echo "chis=$KRYLOVKITC_CHIS"
+    echo "warmup=$KRYLOVKITC_WARMUP"
+    echo "repeats=$KRYLOVKITC_REPEATS"
+    echo "phys=$KRYLOVKITC_PHYS"
+    echo "howmany=$KRYLOVKITC_HOWMANY"
     echo "cuda_module=$cuda_module"
+    echo "threads=JULIA:$JULIA_NUM_THREADS OPENBLAS:$OPENBLAS_NUM_THREADS OMP:$OMP_NUM_THREADS MKL:$MKL_NUM_THREADS"
     "$julia" --version
     which nvcc || true
     nvcc --version | head -1 || true
     nvidia-smi -L || true
     git -C "$repo" rev-parse HEAD 2>/dev/null || true
-    git -C "$repo" status --short 2>/dev/null || true
   ) > "$RUN_DIR/host_env.txt" 2>&1
   "$julia" --project="$repo/benchmarks/krylovkit" -e "using Pkg; Pkg.instantiate(; update_registry=false)"
+  "$julia" --project="$repo/benchmarks/krylovkit" --startup-file=no -e "using TenetNative; TenetNative.build_native_arnoldi(target=:cuda)"
+  test -f "$TENET_NATIVE_ARNOLDI_CUDA_LIB"
   "$julia" --project="$repo/benchmarks/krylovkit" --startup-file=no \
     "$repo/benchmarks/krylovkit/run_gpu.jl" 2>&1 | tee "$RUN_DIR/benchmark.log"
+  cp "$RUN_DIR/results/native_h100_benchmark.csv" "$RUN_DIR/results/krylov_kernel_gpu_snellius_h100.csv"
   find "$RUN_DIR/results" -type f -print | sort > "$RUN_DIR/artifact_files.txt"'
 
 params:
   repo: { type: str, default: "/home/qyang/source/KrylovKit.c" }
   julia: { type: str, default: "/gpfs/home1/qyang/.juliaup/bin/julia" }
   cuda_module: { type: str, default: "2025 CUDA/12.8.0" }
-  chis: { type: str, default: "32,48,64,96,128,192,256,384" }
+  chis: { type: str, default: "32,64,96,128,160,192,224,256" }
   warmup: { type: int, default: 3 }
   repeats: { type: int, default: 11 }
   tol: { type: str, default: "1e-12" }
   krylovdim: { type: int, default: 30 }
   maxiter: { type: int, default: 100 }
-  allow_failures: { type: str, default: "true" }
+  allow_failures: { type: str, default: "false" }
+  phys: { type: int, default: 2 }
+  howmany: { type: int, default: 1 }
   max_ratio: { type: str, default: "0.75" }
   max_lambda_abs_diff: { type: str, default: "2e-10" }
   max_native_relres: { type: str, default: "1e-10" }
   max_krylov_relres: { type: str, default: "1e-10" }
-  julia_threads: { type: int, default: 4 }
-  blas_threads: { type: int, default: 4 }
+  julia_threads: { type: int, default: 1 }
+  blas_threads: { type: int, default: 1 }
   omp_threads: { type: int, default: 1 }
   mkl_threads: { type: int, default: 1 }
   julia_depot: { type: str, default: "" }

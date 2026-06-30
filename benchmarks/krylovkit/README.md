@@ -1,19 +1,11 @@
-# KrylovKit.c Benchmarks
+# Krylov Kernel Runners
 
-These scripts compare KrylovKit.jl against `KrylovKitC`, using the native core
-currently implemented in `TenetNative`.
+`run_cpu.jl` emits CPU rows for native KrylovKit.c and KrylovKit.jl CPU.
+`run_gpu.jl` emits GPU rows for native CUDA and KrylovKit.jl CUDA/CuArray.
 
-Run from the repository root:
+Both runners call `harness/scripts/tenetnative_krylov_benchmark.jl`, which
+records warmed timings, residuals, iteration counts, operation counts,
+correctness status, and performance status.
 
-```sh
-julia --project=benchmarks/krylovkit -e 'using Pkg; Pkg.instantiate()'
-julia --project=benchmarks/krylovkit --startup-file=no benchmarks/krylovkit/run_cpu.jl
-julia --project=benchmarks/krylovkit --startup-file=no benchmarks/krylovkit/run_gpu.jl
-```
-
-Default release sizes:
-
-- CPU: `KRYLOVKITC_CHIS=32,64,128`
-- H100: `KRYLOVKITC_CHIS=64,128,256`
-
-Override `KRYLOVKITC_CHIS=8,16` only for smoke tests.
+The GPU runner must use CuArray for both implementations. It must fail rather
+than changing backend.
