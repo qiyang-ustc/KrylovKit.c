@@ -64,8 +64,8 @@ def plot_speedup(rows: list[dict[str, str]], path: Path, *, title: str, target: 
         ax.text(bar.get_x() + bar.get_width() / 2, y + max(values) * 0.035, f"{y:.2f}x",
                 ha="center", va="bottom", fontsize=9)
         if row.get("status") == "fail":
-            ax.text(bar.get_x() + bar.get_width() / 2, max(0.04, y * 0.58), "gate fail",
-                    ha="center", va="center", fontsize=8, color="white", fontweight="bold")
+            ax.text(bar.get_x() + bar.get_width() / 2, y + max(values) * 0.075, "gate fail",
+                    ha="center", va="bottom", fontsize=8, color=RED, fontweight="bold")
 
     ax.text(0.01, 0.98, measured_note(rows, target), transform=ax.transAxes,
             ha="left", va="top", fontsize=8.5, color=GRAY)
@@ -130,7 +130,7 @@ def plot_runtime(rows: list[dict[str, str]], path: Path, *, title: str, target: 
     ax.grid(axis="y", alpha=0.28, color=LIGHT_GRID)
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
-    ax.legend(loc="upper right", frameon=False)
+    ax.legend(loc="upper left", bbox_to_anchor=(0.01, 0.92), frameon=False)
     finish(fig, path)
 
 
@@ -140,25 +140,25 @@ def main() -> None:
     plot_speedup(
         cpu,
         FIGURES / "krylovkitc_cpu_speedup.svg",
-        title="KrylovKit.c CPU speedup, MPS-like eigsolve",
+        title="CPU backend on Snellius H100 node, MPS-like eigsolve\nwarmup=2 repeat=9 tol=1e-12",
         target=8,
     )
     plot_speedup(
         h100,
         FIGURES / "krylovkitc_h100_speedup.svg",
-        title="KrylovKit.c H100 speedup, MPS-like eigsolve",
+        title="Snellius H100 CUDA fast path, MPS-like eigsolve\nwarmup=3 repeat=11 tol=1e-12",
         target=8,
     )
     plot_residuals(
         h100,
         FIGURES / "krylovkitc_h100_residuals.svg",
-        title="KrylovKit.c H100 residuals, tol=1e-12",
+        title="Snellius H100 residuals, MPS-like eigsolve\nwarmup=3 repeat=11 tol=1e-12",
         gate=1e-10,
     )
     plot_runtime(
         h100,
         FIGURES / "krylovkitc_h100_runtime.svg",
-        title="KrylovKit.c H100 runtime, absolute median seconds",
+        title="Snellius H100 absolute runtime, MPS-like eigsolve\nwarmup=3 repeat=11 tol=1e-12",
         target=8,
     )
 

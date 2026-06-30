@@ -8,8 +8,12 @@ This directory contains the release-facing benchmark suite for the two packages:
 Small jobs are smoke tests only. Headline release claims must use the large
 defaults:
 
-- CPU Oblix: `chi=16,24,32,48,64,96,128,192`, warmup 2, repeat 9.
-- H100 Snellius: `chi=32,48,64,96,128,192,256,384`, warmup 3, repeat 11.
+- CPU backend: `chi=16,24,32,48,64,96,128,192`, warmup 2, repeat 9.
+  The preferred CPU queue is Oblix; the current committed release artifact was
+  measured on a Snellius H100-node CPU allocation because the regular CPU queues
+  were unavailable.
+- H100 Snellius CUDA fast path: `chi=32,48,64,96,128,192,256,384`, warmup 3,
+  repeat 11.
 
 Every run must preserve raw CSV/TSV data, host metadata, package commits, thread
 counts, BLAS/CUDA versions, tolerance, Krylov dimension, max iteration count,

@@ -87,31 +87,42 @@ python3 benchmarks/plots/plot_release_figures.py
 
 ### CPU
 
-Current CPU artifact is a partial pre-public subset because the public-main
-Oblix run was previously blocked by node availability. It is kept visible but
-not used as a headline claim.
+Public-main CPU-backend run `run-f694c0e7c4c6`, Snellius `gpu_h100` allocation,
+commit `0528720`, warmup 2, repeat 9, tolerance `1e-12`. This run uses the CPU
+backend only; the H100 allocation was used because the intended CPU queues were
+unavailable.
 
-| chi | KrylovKit.c median (s) | KrylovKit.jl median (s) | speedup | native residual |
-| ---: | ---: | ---: | ---: | ---: |
-| 32 | 0.001561 | 0.001451 | 0.93x | 4.21e-13 |
-| 64 | 0.009271 | 0.011164 | 1.20x | 6.35e-15 |
-| 128 | 0.065306 | 0.082468 | 1.26x | 5.16e-14 |
+| chi | KrylovKit.c median (s) | KrylovKit.jl median (s) | speedup | native residual | status |
+| ---: | ---: | ---: | ---: | ---: | :--- |
+| 16 | 0.001050 | 0.001130 | 1.08x | 1.97e-15 | pass |
+| 24 | 0.001927 | 0.002018 | 1.05x | 2.38e-15 | pass |
+| 32 | 0.003094 | 0.003195 | 1.03x | 4.14e-13 | pass |
+| 48 | 0.006475 | 0.007992 | 1.23x | 3.55e-13 | pass |
+| 64 | 0.011071 | 0.014583 | 1.32x | 4.22e-13 | pass |
+| 96 | 0.031303 | 0.040733 | 1.30x | 2.20e-14 | pass |
+| 128 | 0.086324 | 0.110771 | 1.28x | 2.48e-13 | pass |
+| 192 | 0.217434 | 0.268270 | 1.23x | 6.52e-13 | pass |
 
 ![KrylovKit.c CPU speedup](docs/figures/krylovkitc_cpu_speedup.svg)
 
 ### H100
 
-Public-main H100 run `run-af7601bb0e53`, Snellius `gpu_h100`, commit
-`40926d4`, warmup 2, repeat 7, tolerance `1e-12`.
+Public-main H100 run `run-f72efffee4ec`, Snellius `gpu_h100`, commit
+`0528720`, warmup 3, repeat 11, tolerance `1e-12`.
 
 | chi | KrylovKit.c median (s) | KrylovKit.jl median (s) | speedup | native residual | status |
 | ---: | ---: | ---: | ---: | ---: | :--- |
-| 64 | 0.022977 | 0.019388 | 0.84x | 2.91e-14 | performance gate failed |
-| 128 | 0.023078 | 0.092304 | 4.00x | 5.75e-13 | passed |
-| 256 | 0.036957 | 0.481650 | 13.03x | 6.00e-14 | passed |
+| 32 | 0.011202 | 0.002558 | 0.23x | 4.21e-13 | fail |
+| 48 | 0.016955 | 0.007982 | 0.47x | 6.87e-14 | fail |
+| 64 | 0.017269 | 0.014545 | 0.84x | 1.69e-13 | fail |
+| 96 | 0.020586 | 0.048505 | 2.36x | 3.92e-14 | pass |
+| 128 | 0.017296 | 0.063785 | 3.69x | 1.25e-13 | pass |
+| 192 | 0.032724 | 0.215429 | 6.58x | 1.91e-13 | pass |
+| 256 | 0.037303 | 0.470568 | 12.61x | 1.85e-13 | pass |
+| 384 | 0.039811 | 1.082068 | 27.18x | 6.81e-14 | pass |
 
-The `chi=64` row passes the residual gate but fails the performance gate. It is
-reported rather than hidden.
+The `chi=32,48,64` rows pass the residual gate but fail the H100 performance
+gate. They are reported rather than hidden.
 
 ![KrylovKit.c H100 speedup](docs/figures/krylovkitc_h100_speedup.svg)
 
@@ -125,12 +136,12 @@ reported rather than hidden.
 bash benchmarks/run_release_suite.sh
 ```
 
-Planned matrix:
+Measured matrix:
 
 | Backend | chi values | warmup | repeats | tolerance |
 | :--- | :--- | ---: | ---: | ---: |
-| CPU Oblix | `16,24,32,48,64,96,128,192` | 2 | 9 | `1e-12` |
-| H100 Snellius | `32,48,64,96,128,192,256,384` | 3 | 11 | `1e-12` |
+| CPU backend on Snellius H100 node | `16,24,32,48,64,96,128,192` | 2 | 9 | `1e-12` |
+| H100 Snellius CUDA fast path | `32,48,64,96,128,192,256,384` | 3 | 11 | `1e-12` |
 
 No claim is made for missing, timed-out, or smoke-test rows.
 
@@ -139,5 +150,6 @@ No claim is made for missing, timed-out, or smoke-test rows.
 - This is not full KrylovKit.jl feature coverage.
 - Generic callbacks are correctness paths first; they are not a general speedup
   claim.
-- Current CPU artifact is partial until the expanded Oblix run completes.
+- CPU-backend timing is from a Snellius H100-node allocation, not an Oblix CPU
+  node. Regular CPU queues were unavailable for this measurement.
 - Complex CUDA is not yet a headline performance claim.

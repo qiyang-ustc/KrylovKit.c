@@ -57,9 +57,9 @@ All README figures are generated from committed artifacts under
 python3 benchmarks/plots/plot_release_figures.py
 ```
 
-Current public artifacts are still partial. The expanded release suite targets
-8 chi values per major curve; figures explicitly label partial coverage until
-that data is present.
+Current public artifacts include 8 CPU-backend points and 8 H100 fast-path
+points. The CPU-backend run was measured on a Snellius `gpu_h100` allocation
+because the intended CPU queues were unavailable; it did not use CUDA.
 
 ![CPU speedup](KrylovKitC/docs/figures/krylovkitc_cpu_speedup.svg)
 
@@ -78,10 +78,10 @@ Detailed tables, run IDs, limitations, and reproduction commands are in
 bash benchmarks/run_release_suite.sh
 ```
 
-Planned matrix:
+Measured matrix:
 
-- CPU Oblix: `chi=16,24,32,48,64,96,128,192`, warmup 2, repeat 9.
-- H100 Snellius: `chi=32,48,64,96,128,192,256,384`, warmup 3, repeat 11.
+- CPU backend on Snellius H100 node: `chi=16,24,32,48,64,96,128,192`, warmup 2, repeat 9.
+- H100 Snellius CUDA fast path: `chi=32,48,64,96,128,192,256,384`, warmup 3, repeat 11.
 - Tolerance: `1e-12`; Krylov dimension: `30`; maxiter: `100`.
 
 No speedup claim is made for missing, timed-out, or smoke-test rows.

@@ -1,16 +1,16 @@
-generated_at_utc = "2026-06-29T22:32:00Z"
-source_kind = "mixed_public_main_and_pre_public_subset"
+generated_at_utc = "2026-06-30T00:04:38.495701+00:00"
+source_kind = "public_main_release_2026_06_30"
 
 [krylovkitc_cpu]
-run_id = "run-2f2788a21035"
-source_kind = "pre_public_measured_subset"
+run_id = "run-f694c0e7c4c6"
+source_kind = "public_main_cpu_backend_on_snellius_h100_node"
 summary = "benchmarks/results/krylovkitc_cpu.csv"
 host_env = "benchmarks/results/krylovkitc_cpu_host_env.txt"
-note = "Public-main Oblix run run-702d068ecb76 was cancelled because the requested node was unavailable/reserved; keep this CPU subset as preliminary only."
+note = "CPU backend measured on a Snellius gpu_h100 allocation because Oblix CPU was unavailable/reserved and Snellius CPU partitions lacked budget; the benchmark backend is cpu and does not use CUDA."
 
 [krylovkitc_h100]
-run_id = "run-af7601bb0e53"
+run_id = "run-f72efffee4ec"
 source_kind = "public_main"
 summary = "benchmarks/results/krylovkitc_h100.csv"
 host_env = "benchmarks/results/krylovkitc_h100_host_env.txt"
-status = "residual_gate_passed; chi64 performance_gate_failed; chi128_chi256 performance_gate_passed"
+status = "correctness pass; performance gate fails for chi=32,48,64 and passes for chi>=96 under max_ratio=0.75"

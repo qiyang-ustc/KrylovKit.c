@@ -1,6 +1,7 @@
 name=release-krylovkitc-oblix-cpu
-repo=/private/tmp/lrising_krylovkitc_bench
-date_utc=2026-06-29T19:01:04Z
-chis=32,64,128
-julia version 1.11.7
-4acd3aa01938e1b24c23e718cec9a17487182f20
+repo=/home/qyang/source/KrylovKit.c
+date_utc=2026-06-30T00:00:15Z
+chis=16,24,32,48,64,96,128,192
+julia version 1.11.4
+05287200e3fcdde6cc4c0eff48736fc9da8f3ed7
+?? TenetNative/deps/
