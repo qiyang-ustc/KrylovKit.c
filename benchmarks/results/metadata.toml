@@ -1,16 +1,36 @@
-generated_at_utc = "2026-06-30T00:04:38.495701+00:00"
-source_kind = "public_main_release_2026_06_30"
+schema = "krylovkitc_kernel_v1"
+status = "complete"
+chi = "32,64,96,128,160,192,224,256"
+warmup = 3
+repeats = 11
+tol = "1e-12"
+krylovdim = 30
+maxiter = 100
+phys = 2
+howmany = 1
+comparison = "same_backend_float64"
 
-[krylovkitc_cpu]
-run_id = "run-f694c0e7c4c6"
-source_kind = "public_main_cpu_backend_on_snellius_h100_node"
-summary = "benchmarks/results/krylovkitc_cpu.csv"
-host_env = "benchmarks/results/krylovkitc_cpu_host_env.txt"
-note = "CPU backend measured on a Snellius gpu_h100 allocation because Oblix CPU was unavailable/reserved and Snellius CPU partitions lacked budget; the benchmark backend is cpu and does not use CUDA."
+[cpu]
+machine = "Oblix"
+jobfile = "benchmarks/jobfiles/oblix_krylovkitc_cpu.jobfile.yaml"
+artifact = "benchmarks/results/krylov_kernel_cpu_oblix.csv"
+requested_cpus = 4
+requested_mem = "4G"
+requested_partition = "lerner"
+run_id = "run-7bb192d4cc94"
+slurm_job_id = "320281"
+state = "completed"
+expectation_match = "usable"
+host_env = "benchmarks/results/krylov_kernel_cpu_oblix_host_env.txt"
 
-[krylovkitc_h100]
-run_id = "run-f72efffee4ec"
-source_kind = "public_main"
-summary = "benchmarks/results/krylovkitc_h100.csv"
-host_env = "benchmarks/results/krylovkitc_h100_host_env.txt"
-status = "correctness pass; performance gate fails for chi=32,48,64 and passes for chi>=96 under max_ratio=0.75"
+[gpu]
+machine = "Snellius H100"
+jobfile = "benchmarks/jobfiles/snellius_krylovkitc_h100.jobfile.yaml"
+artifact = "benchmarks/results/krylov_kernel_gpu_snellius_h100.csv"
+requested_cpus = 16
+requested_mem = "180G"
+run_id = "run-2d663d37beac"
+slurm_job_id = "24311366"
+state = "completed"
+expectation_match = "usable"
+host_env = "benchmarks/results/krylov_kernel_gpu_snellius_h100_host_env.txt"

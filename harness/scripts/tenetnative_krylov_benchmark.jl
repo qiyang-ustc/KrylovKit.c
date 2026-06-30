@@ -1,4 +1,5 @@
 using Dates
+using CUDA
 using LinearAlgebra
 using Printf
 using Random
@@ -256,8 +257,7 @@ end
 
 function sync_backend(backend::AbstractString)
     if backend == "cuda"
-        @eval using CUDA
-        Base.invokelatest(CUDA.synchronize)
+        CUDA.synchronize()
     end
     return nothing
 end
@@ -266,23 +266,22 @@ function to_backend(A::Array{Float64,3}, x0::Array{Float64,2}, backend::Abstract
     if backend == "cpu"
         return A, x0
     elseif backend == "cuda"
-        @eval using CUDA
-        Base.invokelatest(CUDA.allowscalar, false)
-        return Base.invokelatest(CUDA.CuArray, A), Base.invokelatest(CUDA.CuArray, x0)
+        CUDA.allowscalar(false)
+        return CUDA.CuArray(A), CUDA.CuArray(x0)
     end
     error("unsupported backend $backend")
 end
 
 function materialize_matrix(X, backend::AbstractString)
     if backend == "cuda"
-        return Base.invokelatest(Array, X)
+        return Array(X)
     end
     return copy(X)
 end
 
 function materialize_vector(X, backend::AbstractString)
     if backend == "cuda"
-        return vec(Base.invokelatest(Array, X))
+        return vec(Array(X))
     end
     return vec(copy(X))
 end
@@ -517,29 +516,29 @@ function linsolve_krylov_dense(M, x0; algorithm::AbstractString, tol::Real,
     return (; x, info)
 end
 
-function krylov_case(case_cpu, x0_cpu, opts; dense_matrix=nothing)
+function krylov_case(case_backend, x0_backend, opts; dense_matrix=nothing)
     if opts.problem == "eigsolve"
         return dense_matrix === nothing ?
-            dominant_pair_krylov(case_cpu, x0_cpu;
+            dominant_pair_krylov(case_backend, x0_backend;
                                  tol=opts.tol,
                                  krylovdim=opts.max_k,
                                  maxiter=opts.krylov_maxiter,
                                  howmany=opts.howmany) :
-            dominant_pair_krylov_dense(dense_matrix, x0_cpu;
+            dominant_pair_krylov_dense(dense_matrix, x0_backend;
                                        tol=opts.tol,
                                        krylovdim=opts.max_k,
                                        maxiter=opts.krylov_maxiter,
                                        howmany=opts.howmany)
     elseif opts.problem == "linsolve"
         return dense_matrix === nothing ?
-            linsolve_krylov(case_cpu, x0_cpu;
+            linsolve_krylov(case_backend, x0_backend;
                             algorithm=opts.linsolve_algorithm,
                             tol=opts.tol,
                             krylovdim=opts.max_k,
                             maxiter=opts.krylov_maxiter,
                             a0=opts.lin_a0,
                             a1=opts.lin_a1) :
-            linsolve_krylov_dense(dense_matrix, x0_cpu;
+            linsolve_krylov_dense(dense_matrix, x0_backend;
                                   algorithm=opts.linsolve_algorithm,
                                   tol=opts.tol,
                                   krylovdim=opts.max_k,
@@ -550,16 +549,19 @@ function krylov_case(case_cpu, x0_cpu, opts; dense_matrix=nothing)
     error("unsupported problem $(opts.problem)")
 end
 
-function time_krylov(case_cpu, x0_cpu, opts; dense_matrix=nothing)
+function time_krylov(case_backend, x0_backend, opts, backend::AbstractString; dense_matrix=nothing)
     timings = Float64[]
     result = nothing
     for _ in 1:opts.warmup
-        result = krylov_case(case_cpu, x0_cpu, opts; dense_matrix)
+        result = krylov_case(case_backend, x0_backend, opts; dense_matrix)
+        sync_backend(backend)
     end
     for _ in 1:opts.repeats
         GC.gc()
+        sync_backend(backend)
         t0 = time_ns()
-        result = krylov_case(case_cpu, x0_cpu, opts; dense_matrix)
+        result = krylov_case(case_backend, x0_backend, opts; dense_matrix)
+        sync_backend(backend)
         push!(timings, (time_ns() - t0) / 1e9)
     end
     return result, timings
@@ -603,10 +605,11 @@ end
 function write_csv(path::AbstractString, rows)
     open(path, "w") do io
         println(io, join((
-            "backend", "problem", "native_mode", "chi", "phys", "max_k", "howmany", "tol", "krylov_maxiter",
+            "backend", "problem", "native_mode", "comparison_scope", "chi", "phys", "max_k", "howmany", "tol", "krylov_maxiter",
             "linsolve_algorithm",
             "warmup", "repeats", "native_seconds_min", "native_seconds_median",
             "krylov_seconds_min", "krylov_seconds_median", "native_over_krylov",
+            "max_ratio", "performance_status",
             "max_lambda_abs_diff", "max_solution_relerr", "max_native_relres", "max_krylov_relres",
             "native_converged", "krylov_converged", "native_numiter", "krylov_numiter",
             "native_numops", "krylov_numops", "native_info_normres", "krylov_info_normres",
@@ -615,10 +618,11 @@ function write_csv(path::AbstractString, rows)
             "lin_a0", "lin_a1", "status",
         ), ','))
         for row in rows
-            println(io, join((
+            println(io, replace(join((
                 row.backend,
                 row.problem,
                 row.native_mode,
+                row.comparison_scope,
                 row.chi,
                 row.phys,
                 row.max_k,
@@ -633,6 +637,8 @@ function write_csv(path::AbstractString, rows)
                 @sprintf("%.9g", row.krylov_seconds_min),
                 @sprintf("%.9g", row.krylov_seconds_median),
                 @sprintf("%.9g", row.native_over_krylov),
+                @sprintf("%.9g", row.max_ratio),
+                row.performance_status,
                 @sprintf("%.9g", row.max_lambda_abs_diff),
                 @sprintf("%.9g", row.max_solution_relerr),
                 @sprintf("%.9g", row.max_native_relres),
@@ -655,7 +661,7 @@ function write_csv(path::AbstractString, rows)
                 @sprintf("%.17g", row.lin_a0),
                 @sprintf("%.17g", row.lin_a1),
                 row.status,
-            ), ','))
+            ), ','), "NaN" => ""))
         end
     end
     return path
@@ -687,17 +693,18 @@ function write_markdown(path::AbstractString, rows, opts)
         end
         println(io)
         if opts.problem == "eigsolve"
-            println(io, "| backend | problem | native mode | chi | native median (s) | krylov median (s) | ratio | |lambda native-krylov| | native relres | krylov relres | status |")
-            println(io, "| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |")
+            println(io, "| backend | scope | problem | native mode | chi | native median (s) | krylov median (s) | ratio | |lambda native-krylov| | native relres | krylov relres | correctness | performance |")
+            println(io, "| --- | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- |")
         else
-            println(io, "| backend | problem | native mode | chi | native median (s) | krylov median (s) | ratio | solution relerr | native relres | krylov relres | status |")
-            println(io, "| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |")
+            println(io, "| backend | scope | problem | native mode | chi | native median (s) | krylov median (s) | ratio | solution relerr | native relres | krylov relres | correctness | performance |")
+            println(io, "| --- | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- |")
         end
         for row in rows
             accuracy_metric = opts.problem == "eigsolve" ? row.lambda_abs_diff : row.solution_relerr
             println(
                 io,
                 "| ", row.backend,
+                " | ", row.comparison_scope,
                 " | ", row.problem,
                 " | ", row.native_mode,
                 " | ", row.chi,
@@ -707,7 +714,8 @@ function write_markdown(path::AbstractString, rows, opts)
                 " | ", @sprintf("%.3e", accuracy_metric),
                 " | ", @sprintf("%.3e", row.native_relres),
                 " | ", @sprintf("%.3e", row.krylov_relres),
-                " | ", row.status, " |",
+                " | ", row.status,
+                " | ", row.performance_status, " |",
             )
         end
     end
@@ -770,6 +778,9 @@ function main(argv)
     native_relres_gate = resolve_gate(opts.max_native_relres, opts.backend)
     krylov_relres_gate = resolve_gate(opts.max_krylov_relres, opts.backend)
     rows = NamedTuple[]
+    comparison_scope = opts.backend == "cuda" ?
+        "cuda_native_fastpath_vs_krylovkit_cuda" :
+        "cpu_native_fastpath_vs_krylovkit_cpu"
     for (index, chi) in enumerate(opts.chis)
         seed = opts.seed + index - 1
         case = generate_case(seed, chi, opts.phys)
@@ -779,8 +790,13 @@ function main(argv)
             to_backend(case.A, case.x0, opts.backend)
 
         native_result, native_timings = time_native(TN, backend_A, backend_x0, opts.backend, opts)
-        krylov_result, krylov_timings = time_krylov(case.A, case.x0, opts;
-                                                   dense_matrix=dense_matrix)
+        krylov_result, krylov_timings = time_krylov(
+            backend_A,
+            backend_x0,
+            opts,
+            opts.backend;
+            dense_matrix=dense_matrix,
+        )
 
         native_median = median_seconds(native_timings)
         krylov_median = median_seconds(krylov_timings)
@@ -811,8 +827,8 @@ function main(argv)
             krylov_lambdas = :lambdas in propertynames(krylov_result) ?
                 krylov_result.lambdas : [krylov_result.lambda]
             krylov_ys = :ys in propertynames(krylov_result) ?
-                [Matrix{Float64}(real.(y)) for y in krylov_result.ys] :
-                [Matrix{Float64}(real.(krylov_result.y))]
+                [Matrix{Float64}(real.(materialize_matrix(y, opts.backend))) for y in krylov_result.ys] :
+                [Matrix{Float64}(real.(materialize_matrix(krylov_result.y, opts.backend)))]
             native_relres = eigenpairs_relres(case.A, native_ys, native_lambdas)
             krylov_relres = eigenpairs_relres(case.A, krylov_ys, krylov_lambdas)
             native_lambda = native_lambdas[1]
@@ -821,7 +837,7 @@ function main(argv)
         else
             b = vec(copy(case.x0))
             native_x = materialize_vector(native_result.x, opts.backend)
-            krylov_x = vec(copy(krylov_result.x))
+            krylov_x = materialize_vector(krylov_result.x, opts.backend)
             native_relres = dense_matrix === nothing ?
                 linsolve_relres(case.A, native_x, b, opts.lin_a0, opts.lin_a1) :
                 linsolve_relres_dense(dense_matrix, native_x, b, opts.lin_a0, opts.lin_a1)
@@ -831,28 +847,28 @@ function main(argv)
             sol_relerr = solution_relerr(native_x, krylov_x)
         end
 
-        status = if opts.problem == "eigsolve"
-            (
-                ratio <= opts.max_ratio &&
-                lambda_abs_diff <= lambda_gate &&
-                native_relres <= native_relres_gate &&
-                krylov_relres <= krylov_relres_gate
-            ) ? "pass" : "fail"
+        correctness_pass = if opts.problem == "eigsolve"
+            lambda_abs_diff <= lambda_gate &&
+            native_relres <= native_relres_gate &&
+            krylov_relres <= krylov_relres_gate
         else
             (
-                ratio <= opts.max_ratio &&
                 sol_relerr <= solution_gate &&
                 native_relres <= native_relres_gate &&
                 krylov_relres <= krylov_relres_gate &&
                 native_converged > 0 &&
                 krylov_converged > 0
-            ) ? "pass" : "fail"
+            )
         end
+        status = correctness_pass ? "pass" : "fail"
+        performance_status = ratio <= opts.max_ratio ?
+            "within_native_over_krylov_gate" : "slower_than_native_over_krylov_gate"
 
         push!(rows, (
             backend = opts.backend,
             problem = opts.problem,
             native_mode = opts.native_mode,
+            comparison_scope,
             chi,
             phys = opts.phys,
             max_k = opts.max_k,
@@ -867,6 +883,8 @@ function main(argv)
             krylov_seconds_min = minimum(krylov_timings),
             krylov_seconds_median = krylov_median,
             native_over_krylov = ratio,
+            max_ratio = opts.max_ratio,
+            performance_status,
             max_lambda_abs_diff = lambda_gate,
             max_solution_relerr = solution_gate,
             max_native_relres = native_relres_gate,
@@ -891,16 +909,16 @@ function main(argv)
         ))
         if opts.problem == "eigsolve"
             @printf(
-                "TENET_NATIVE_BENCHMARK_CASE backend=%s problem=%s native_mode=%s chi=%d native_median_seconds=%.6f krylov_median_seconds=%.6f ratio=%.6f lambda_abs_diff=%.3e max_lambda_abs_diff=%.3e native_relres=%.3e max_native_relres=%.3e krylov_relres=%.3e max_krylov_relres=%.3e status=%s\n",
-                opts.backend, opts.problem, opts.native_mode, chi, native_median,
-                krylov_median, ratio, lambda_abs_diff, lambda_gate, native_relres,
+                "TENET_NATIVE_BENCHMARK_CASE backend=%s scope=%s problem=%s native_mode=%s chi=%d native_median_seconds=%.6f krylov_median_seconds=%.6f ratio=%.6f max_ratio=%.6f performance_status=%s lambda_abs_diff=%.3e max_lambda_abs_diff=%.3e native_relres=%.3e max_native_relres=%.3e krylov_relres=%.3e max_krylov_relres=%.3e status=%s\n",
+                opts.backend, comparison_scope, opts.problem, opts.native_mode, chi, native_median,
+                krylov_median, ratio, opts.max_ratio, performance_status, lambda_abs_diff, lambda_gate, native_relres,
                 native_relres_gate, krylov_relres, krylov_relres_gate, status,
             )
         else
             @printf(
-                "TENET_NATIVE_BENCHMARK_CASE backend=%s problem=%s native_mode=%s linsolve_algorithm=%s chi=%d native_median_seconds=%.6f krylov_median_seconds=%.6f ratio=%.6f solution_relerr=%.3e max_solution_relerr=%.3e native_relres=%.3e max_native_relres=%.3e krylov_relres=%.3e max_krylov_relres=%.3e lin_a0=%.6g lin_a1=%.6g status=%s\n",
-                opts.backend, opts.problem, opts.native_mode, opts.linsolve_algorithm, chi, native_median,
-                krylov_median, ratio, sol_relerr, solution_gate, native_relres,
+                "TENET_NATIVE_BENCHMARK_CASE backend=%s scope=%s problem=%s native_mode=%s linsolve_algorithm=%s chi=%d native_median_seconds=%.6f krylov_median_seconds=%.6f ratio=%.6f max_ratio=%.6f performance_status=%s solution_relerr=%.3e max_solution_relerr=%.3e native_relres=%.3e max_native_relres=%.3e krylov_relres=%.3e max_krylov_relres=%.3e lin_a0=%.6g lin_a1=%.6g status=%s\n",
+                opts.backend, comparison_scope, opts.problem, opts.native_mode, opts.linsolve_algorithm, chi, native_median,
+                krylov_median, ratio, opts.max_ratio, performance_status, sol_relerr, solution_gate, native_relres,
                 native_relres_gate, krylov_relres, krylov_relres_gate, opts.lin_a0,
                 opts.lin_a1, status,
             )

@@ -1,17 +1,12 @@
-# Benchmark Results
+# Release Results
 
-This directory stores compact benchmark summaries used by README figures.
+Official result artifacts are produced by jobctl. The Snellius H100 and Oblix
+CPU artifacts are present.
 
-Raw jobctl artifacts should normally stay in the job run directory or under
-`/tmp`. Commit only compact CSV/TSV summaries, host metadata, and generated
-figures needed for README claims.
+Expected artifacts:
 
-`metadata.toml` records the source and status for each committed artifact.
-Do not promote a row to a headline claim unless the corresponding raw summary,
-host metadata, and source run ID are present here.
+- `krylov_kernel_gpu_snellius_h100.csv`: completed, `run-2d663d37beac`.
+- `krylov_kernel_cpu_oblix.csv`: completed, `run-7bb192d4cc94`.
 
-Regenerate the Markdown table summary with:
-
-```sh
-python3 benchmarks/results/render_release_tables.py
-```
+Each CSV must contain 8 `chi` rows and include residual, iteration, operation,
+correctness, and performance-status columns.
