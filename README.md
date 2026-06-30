@@ -58,8 +58,11 @@ python3 benchmarks/plots/plot_release_figures.py
 ```
 
 Current public artifacts include 8 CPU-backend points and 8 H100 fast-path
-points. The CPU-backend run was measured on a Snellius `gpu_h100` allocation
-because the intended CPU queues were unavailable; it did not use CUDA.
+points. The H100 speedup figure compares KrylovKit.c CUDA native fast path with
+KrylovKit.jl running the CPU operator baseline on the same generated problems;
+it is not a GPU-vs-GPU KrylovKit comparison. The CPU-backend run was measured on
+a Snellius `gpu_h100` allocation because the intended CPU queues were
+unavailable; it did not use CUDA.
 
 ![CPU speedup](KrylovKitC/docs/figures/krylovkitc_cpu_speedup.svg)
 
@@ -81,7 +84,7 @@ bash benchmarks/run_release_suite.sh
 Measured matrix:
 
 - CPU backend on Snellius H100 node: `chi=16,24,32,48,64,96,128,192`, warmup 2, repeat 9.
-- H100 Snellius CUDA fast path: `chi=32,48,64,96,128,192,256,384`, warmup 3, repeat 11.
+- H100 Snellius CUDA fast path: `chi=32,48,64,96,128,192,256,384`, warmup 3, repeat 11; baseline is KrylovKit.jl CPU operator timing, not a KrylovKit.jl GPU implementation.
 - Tolerance: `1e-12`; Krylov dimension: `30`; maxiter: `100`.
 
 No speedup claim is made for missing, timed-out, or smoke-test rows.

@@ -51,7 +51,14 @@ def finish(fig, path: Path) -> None:
     plt.close(fig)
 
 
-def plot_speedup(rows: list[dict[str, str]], path: Path, *, title: str, target: int) -> None:
+def plot_speedup(
+    rows: list[dict[str, str]],
+    path: Path,
+    *,
+    title: str,
+    target: int,
+    ylabel: str = "speedup (KrylovKit.jl / KrylovKit.c)",
+) -> None:
     chis = [int(r["chi"]) for r in rows]
     values = [speedup(r) for r in rows]
     xpos = list(range(len(rows)))
@@ -74,7 +81,7 @@ def plot_speedup(rows: list[dict[str, str]], path: Path, *, title: str, target: 
     ax.set_xticks(xpos)
     ax.set_xticklabels([str(c) for c in chis])
     ax.set_xlabel("bond dimension chi")
-    ax.set_ylabel("speedup (KrylovKit.jl / KrylovKit.c)")
+    ax.set_ylabel(ylabel)
     ax.set_title(title)
     ax.set_ylim(0, max(max(values) * 1.18, 1.25))
     ax.grid(axis="y", alpha=0.28, color=LIGHT_GRID)
@@ -92,7 +99,7 @@ def plot_residuals(rows: list[dict[str, str]], path: Path, *, title: str, gate: 
 
     fig, ax = plt.subplots(figsize=(7.2, 4.2), constrained_layout=True)
     ax.plot(xpos, native, marker="o", linewidth=2.0, markersize=5.5, color=BLUE, label="KrylovKit.c")
-    ax.plot(xpos, krylov, marker="o", linewidth=2.0, markersize=5.5, color=ORANGE, label="KrylovKit.jl")
+    ax.plot(xpos, krylov, marker="o", linewidth=2.0, markersize=5.5, color=ORANGE, label="KrylovKit.jl CPU")
     ax.axhline(gate, color=RED, linestyle="--", linewidth=1.1, label=f"gate {gate:.0e}")
     ax.set_xticks(xpos)
     ax.set_xticklabels([str(c) for c in chis])
@@ -119,7 +126,7 @@ def plot_runtime(rows: list[dict[str, str]], path: Path, *, title: str, target: 
     ax.bar([x - width / 2 for x in xpos], native, width=width, color=BLUE,
            edgecolor="#263238", linewidth=0.6, label="KrylovKit.c")
     ax.bar([x + width / 2 for x in xpos], krylov, width=width, color=ORANGE,
-           edgecolor="#263238", linewidth=0.6, label="KrylovKit.jl")
+           edgecolor="#263238", linewidth=0.6, label="KrylovKit.jl CPU")
     ax.text(0.01, 0.98, measured_note(rows, target), transform=ax.transAxes,
             ha="left", va="top", fontsize=8.5, color=GRAY)
     ax.set_xticks(xpos)
@@ -146,19 +153,20 @@ def main() -> None:
     plot_speedup(
         h100,
         FIGURES / "krylovkitc_h100_speedup.svg",
-        title="Snellius H100 CUDA fast path, MPS-like eigsolve\nwarmup=3 repeat=11 tol=1e-12",
+        title="Snellius H100 CUDA fast path vs KrylovKit.jl CPU baseline\nMPS-like eigsolve, warmup=3 repeat=11 tol=1e-12",
         target=8,
+        ylabel="speedup (KrylovKit.jl CPU / KrylovKit.c CUDA)",
     )
     plot_residuals(
         h100,
         FIGURES / "krylovkitc_h100_residuals.svg",
-        title="Snellius H100 residuals, MPS-like eigsolve\nwarmup=3 repeat=11 tol=1e-12",
+        title="Snellius H100 native and KrylovKit.jl CPU residuals\nMPS-like eigsolve, warmup=3 repeat=11 tol=1e-12",
         gate=1e-10,
     )
     plot_runtime(
         h100,
         FIGURES / "krylovkitc_h100_runtime.svg",
-        title="Snellius H100 absolute runtime, MPS-like eigsolve\nwarmup=3 repeat=11 tol=1e-12",
+        title="CUDA native vs KrylovKit.jl CPU absolute runtime\nMPS-like eigsolve, warmup=3 repeat=11 tol=1e-12",
         target=8,
     )
 

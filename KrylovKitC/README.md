@@ -108,7 +108,10 @@ unavailable.
 ### H100
 
 Public-main H100 run `run-f72efffee4ec`, Snellius `gpu_h100`, commit
-`0528720`, warmup 3, repeat 11, tolerance `1e-12`.
+`0528720`, warmup 3, repeat 11, tolerance `1e-12`. This section compares the
+KrylovKit.c CUDA native fast path with KrylovKit.jl running the CPU operator
+baseline on the same generated MPS-like problem. It is not a GPU-vs-GPU
+KrylovKit comparison.
 
 | chi | KrylovKit.c median (s) | KrylovKit.jl median (s) | speedup | native residual | status |
 | ---: | ---: | ---: | ---: | ---: | :--- |
@@ -141,7 +144,7 @@ Measured matrix:
 | Backend | chi values | warmup | repeats | tolerance |
 | :--- | :--- | ---: | ---: | ---: |
 | CPU backend on Snellius H100 node | `16,24,32,48,64,96,128,192` | 2 | 9 | `1e-12` |
-| H100 Snellius CUDA fast path | `32,48,64,96,128,192,256,384` | 3 | 11 | `1e-12` |
+| H100 Snellius CUDA fast path vs KrylovKit.jl CPU baseline | `32,48,64,96,128,192,256,384` | 3 | 11 | `1e-12` |
 
 No claim is made for missing, timed-out, or smoke-test rows.
 
@@ -152,4 +155,6 @@ No claim is made for missing, timed-out, or smoke-test rows.
   claim.
 - CPU-backend timing is from a Snellius H100-node allocation, not an Oblix CPU
   node. Regular CPU queues were unavailable for this measurement.
+- H100 speedups are CUDA native fast path versus KrylovKit.jl CPU baseline, not
+  a comparison against a KrylovKit.jl GPU backend.
 - Complex CUDA is not yet a headline performance claim.
