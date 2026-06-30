@@ -11,6 +11,17 @@ The release sweep is `chi = 32,64,96,128,160,192,224,256`, with 3 warmup runs
 and 11 timed repeats. Krylov residuals, iteration counts, operation counts, and
 correctness status are part of the benchmark output.
 
+## Acknowledgements and Citation
+
+This project is downstream engineering work built around KrylovKit.jl as the
+oracle and reference implementation. We deeply thank Jutho for KrylovKit.jl:
+the Julia implementation defines the numerical behavior, convergence metadata,
+and correctness target that the native C++/CUDA kernels preserve.
+
+If you use this code, please also cite KrylovKit.jl and Jutho's work. The
+optimized kernels here are validated against KrylovKit.jl; they do not replace
+the scientific and software credit of the upstream project.
+
 ## Release Benchmark Results
 
 These are warmed single-kernel timings. They are not full-solve timings.

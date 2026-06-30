@@ -16,6 +16,17 @@ Release benchmark contract:
 If the KrylovKit.jl CUDA baseline cannot run on CuArray, the GPU benchmark must
 fail instead of changing backend.
 
+## Acknowledgements and Citation
+
+`KrylovKitC` is downstream engineering work built around KrylovKit.jl as the
+oracle and reference implementation. We deeply thank Jutho for KrylovKit.jl:
+the Julia implementation defines the numerical behavior, convergence metadata,
+and correctness target that the native C++/CUDA kernels preserve.
+
+If you use this code, please also cite KrylovKit.jl and Jutho's work. The
+optimized kernels here are validated against KrylovKit.jl; they do not replace
+the scientific and software credit of the upstream project.
+
 ## Release Benchmark Results
 
 These are warmed single-kernel timings. They are not full-solve timings.
